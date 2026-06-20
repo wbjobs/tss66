@@ -19,7 +19,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, shallowRef } from 'vue'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -28,7 +28,8 @@ import {
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 } from 'chart.js'
 import { Line } from 'vue-chartjs'
 
@@ -39,7 +40,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 )
 
 const props = defineProps({
@@ -68,33 +70,48 @@ watch(processNames, (names) => {
   }
 }, { immediate: true })
 
+const SAMPLE_STEP = 2
+
 const chartData = computed(() => {
   if (!selectedProcess.value) return null
-  const data = props.historyData[selectedProcess.value]
-  if (!data || data.length === 0) return null
+  const rawData = props.historyData[selectedProcess.value]
+  if (!rawData || rawData.length === 0) return null
 
-  const labels = data.map((_, i) => `-${(data.length - 1 - i) * 2}s`)
-  
+  const sampled = rawData.length > 30
+    ? rawData.filter((_, i) => i % SAMPLE_STEP === 0 || i === rawData.length - 1)
+    : rawData
+
+  const labels = sampled.map((_, i) => {
+    const secondsAgo = (rawData.length - 1 - (rawData.length > 30 ? i * SAMPLE_STEP : i)) * 2
+    return secondsAgo <= 0 ? '现在' : `-${secondsAgo}s`
+  })
+
   return {
     labels,
     datasets: [
       {
         label: 'CPU 使用率 (%)',
-        data: data.map(d => d.cpu_usage || 0),
+        data: sampled.map(d => d.cpu_usage || 0),
         borderColor: '#667eea',
         backgroundColor: 'rgba(102, 126, 234, 0.1)',
         yAxisID: 'y',
         tension: 0.3,
-        fill: true
+        fill: true,
+        pointRadius: sampled.length > 20 ? 0 : 3,
+        pointHoverRadius: 4,
+        borderWidth: 2
       },
       {
         label: '内存占用 (MB)',
-        data: data.map(d => d.memory_mb || 0),
+        data: sampled.map(d => d.memory_mb || 0),
         borderColor: '#f093fb',
         backgroundColor: 'rgba(240, 147, 251, 0.1)',
         yAxisID: 'y1',
         tension: 0.3,
-        fill: true
+        fill: true,
+        pointRadius: sampled.length > 20 ? 0 : 3,
+        pointHoverRadius: 4,
+        borderWidth: 2
       }
     ]
   }
@@ -103,6 +120,7 @@ const chartData = computed(() => {
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
+  animation: false,
   interaction: {
     mode: 'index',
     intersect: false,
@@ -113,13 +131,14 @@ const chartOptions = {
     },
     tooltip: {
       backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      enabled: true
     }
   },
   scales: {
     y: {
       type: 'linear',
       display: true,
-    position: 'left',
+      position: 'left',
       title: {
         display: true,
         text: 'CPU (%)'

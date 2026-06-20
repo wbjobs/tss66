@@ -1,4 +1,4 @@
-use crate::ring_buffer::{ProcessMetric};
+use crate::ring_buffer::ProcessMetric;
 use crate::config::AppConfig;
 use parking_lot::Mutex;
 use std::collections::HashMap;
@@ -14,12 +14,13 @@ pub struct ProcessMonitor {
     system: System,
     history: HashMap<String, crate::ring_buffer::RingBuffer<ProcessMetric>>,
     config: AppConfig,
+    consecutive_errors: u32,
 }
 
 impl ProcessMonitor {
     pub fn new(config: AppConfig) -> Self {
-        let mut system = System::new_all();
-        system.refresh_all();
+        let mut system = System::new();
+        system.refresh_processes();
 
         let mut history = HashMap::new();
         for name in &config.process_names {
@@ -33,6 +34,7 @@ impl ProcessMonitor {
             system,
             history,
             config,
+            consecutive_errors: 0,
         }
     }
 
@@ -52,14 +54,32 @@ impl ProcessMonitor {
     }
 
     pub fn refresh(&mut self) {
-        self.system.refresh_all();
+        let refresh_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            self.system.refresh_processes();
+        }));
+
+        if refresh_result.is_err() {
+            self.consecutive_errors += 1;
+            eprintln!(
+                "进程信息刷新失败（连续第 {} 次），将在下个周期重试",
+                self.consecutive_errors
+            );
+            if self.consecutive_errors >= 5 {
+                self.system = System::new();
+                self.consecutive_errors = 0;
+                eprintln!("连续刷新失败过多，已重建 System 实例");
+            }
+            return;
+        }
+
+        self.consecutive_errors = 0;
 
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs();
 
-        for proc_name in &self.config.process_names {
+        for proc_name in &self.config.process_names.clone() {
             let metric = self.collect_metric(proc_name, timestamp);
             if let Some(buffer) = self.history.get_mut(proc_name) {
                 buffer.push(metric);
@@ -70,16 +90,26 @@ impl ProcessMonitor {
     fn collect_metric(&self, process_name: &str, timestamp: u64) -> ProcessMetric {
         let name_lower = process_name.to_lowercase();
 
-        let mut total_cpu = 0.0;
+        let mut total_cpu = 0.0f64;
         let mut total_memory = 0u64;
         let mut count = 0u32;
         let mut pid = None;
 
         for (pid_val, process) in self.system.processes() {
-            let proc_name = process.name().to_lowercase();
-            if proc_name == name_lower || proc_name.starts_with(&name_lower) {
-                total_cpu += process.cpu_usage() as f64;
-                total_memory += process.memory();
+            let proc_name_str = process.name().to_lowercase();
+            if proc_name_str == name_lower || proc_name_str.starts_with(&name_lower) {
+                let cpu = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    process.cpu_usage() as f64
+                }))
+                .unwrap_or(0.0);
+
+                let mem = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    process.memory()
+                }))
+                .unwrap_or(0);
+
+                total_cpu += cpu;
+                total_memory += mem;
                 count += 1;
                 if pid.is_none() {
                     pid = Some(pid_val.as_u32());

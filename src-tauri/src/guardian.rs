@@ -131,22 +131,54 @@ fn kill_process(process_name: &str) -> Result<(), String> {
             Ok(())
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            Err(format!("taskkill 执行失败: {}", stderr))
+            if stderr.contains("Access is denied") || stderr.contains("拒绝访问") {
+                Err(format!("权限不足，无法终止进程 {}。请以管理员身份运行本应用", process_name))
+            } else {
+                Err(format!("taskkill 执行失败: {}", stderr))
+            }
         }
     }
 
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "macos")]
+    {
+        let output = Command::new("killall")
+            .args(["-9", process_name])
+            .output()
+            .map_err(|e| format!("执行 killall 失败: {}", e))?;
+
+        if output.status.success() {
+            Ok(())
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            if stderr.contains("Operation not permitted") || stderr.contains("Permission denied") {
+                Err(format!("权限不足，无法终止进程 {}。请在系统偏好设置中授予辅助功能权限，或以 sudo 身份运行", process_name))
+            } else if stderr.contains("No matching processes") {
+                Err(format!("未找到进程 {}，进程可能已自行退出", process_name))
+            } else {
+                Err(format!("killall 执行失败: {}", stderr))
+            }
+        }
+    }
+
+    #[cfg(target_os = "linux")]
     {
         let output = Command::new("pkill")
-            .args(["-f", process_name])
+            .args(["-9", "-x", process_name])
             .output()
             .map_err(|e| format!("执行 pkill 失败: {}", e))?;
 
         if output.status.success() {
             Ok(())
         } else {
+            let exit_code = output.status.code().unwrap_or(-1);
             let stderr = String::from_utf8_lossy(&output.stderr);
-            Err(format!("pkill 执行失败: {}", stderr))
+            if exit_code == 1 {
+                Err(format!("未找到进程 {}，进程可能已自行退出", process_name))
+            } else if stderr.contains("Operation not permitted") || stderr.contains("Permission denied") {
+                Err(format!("权限不足，无法终止进程 {}。请使用 sudo 运行本应用", process_name))
+            } else {
+                Err(format!("pkill 执行失败: {}", stderr))
+            }
         }
     }
 }

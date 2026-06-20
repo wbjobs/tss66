@@ -174,31 +174,37 @@ pub fn run() {
 
             std::thread::spawn(move || {
                 loop {
-                    {
-                        let mut mon = monitor.lock();
-                        mon.refresh();
+                    let loop_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        {
+                            let mut mon = monitor.lock();
+                            mon.refresh();
 
-                        let metrics = mon.get_latest_metrics();
-                        let mut guard = guardian.lock();
-                        let killed = guard.check_and_kill(&metrics);
+                            let metrics = mon.get_latest_metrics();
+                            let mut guard = guardian.lock();
+                            let killed = guard.check_and_kill(&metrics);
 
-                        for info in killed {
-                            let _ = tauri::api::notification::Notification::new(
-                                "进程守护提醒"
-                            )
-                            .body(format!(
-                                "进程 {} 内存占用 {:.2}MB 超过阈值 {:.2}MB，已被终止",
-                                info.name, info.memory_mb, info.threshold_mb
-                            ))
-                            .show();
+                            for info in killed {
+                                let _ = tauri::api::notification::Notification::new(
+                                    "进程守护提醒"
+                                )
+                                .body(format!(
+                                    "进程 {} 内存占用 {:.2}MB 超过阈值 {:.2}MB，已被终止",
+                                    info.name, info.memory_mb, info.threshold_mb
+                                ))
+                                .show();
 
-                            let payload = serde_json::json!({
-                                "process_name": info.name,
-                                "memory_mb": info.memory_mb,
-                                "threshold_mb": info.threshold_mb,
-                            });
-                            let _ = app_handle.emit_all("process-killed", payload);
+                                let payload = serde_json::json!({
+                                    "process_name": info.name,
+                                    "memory_mb": info.memory_mb,
+                                    "threshold_mb": info.threshold_mb,
+                                });
+                                let _ = app_handle.emit_all("process-killed", payload);
+                            }
                         }
+                    }));
+
+                    if let Err(e) = loop_result {
+                        eprintln!("监控线程本轮执行发生异常: {:?}", e);
                     }
 
                     std::thread::sleep(std::time::Duration::from_secs(2));

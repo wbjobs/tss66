@@ -118,7 +118,8 @@ async function updateThreshold(processName, thresholdMb) {
   }
 }
 
-let pollInterval = null
+let fastPollInterval = null
+let slowPollInterval = null
 
 onMounted(async () => {
   await loadConfig()
@@ -126,11 +127,14 @@ onMounted(async () => {
   await updateHistoryData()
   await loadGuardianStatus()
 
-  pollInterval = setInterval(async () => {
+  fastPollInterval = setInterval(async () => {
     await updateProcessData()
-    await updateHistoryData()
     await loadGuardianStatus()
   }, 2000)
+
+  slowPollInterval = setInterval(async () => {
+    await updateHistoryData()
+  }, 6000)
 
   unlistenGuardian = await listen('process-killed', (event) => {
     console.log('进程被终止:', event.payload)
@@ -139,8 +143,11 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  if (pollInterval) {
-    clearInterval(pollInterval)
+  if (fastPollInterval) {
+    clearInterval(fastPollInterval)
+  }
+  if (slowPollInterval) {
+    clearInterval(slowPollInterval)
   }
   if (unlistenGuardian) {
     unlistenGuardian()
