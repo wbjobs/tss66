@@ -87,16 +87,18 @@ function getGuardianText(name) {
 
 <style scoped>
 .process-table {
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow);
+  transition: background 0.3s ease;
 }
 
 .process-table h2 {
   font-size: 18px;
   margin-bottom: 16px;
-  color: #333;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 table {
@@ -107,26 +109,40 @@ table {
 thead th {
   text-align: left;
   padding: 12px;
-  background: #f8f9fa;
+  background: var(--bg-tertiary);
   font-weight: 600;
   font-size: 13px;
-  color: #666;
-  border-bottom: 2px solid #e9ecef;
+  color: var(--text-secondary);
+  border-bottom: 2px solid var(--border-light);
+  transition: all 0.3s ease;
 }
 
 tbody td {
   padding: 14px 12px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-light);
   font-size: 14px;
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+tbody tr.running {
+  background: var(--row-running-bg);
+  transition: background 0.3s ease;
+}
+
+tbody tr.stopped {
+  background: var(--row-stopped-bg);
+  transition: background 0.3s ease;
 }
 
 tbody tr.running:hover {
-  background: #f8f9ff;
+  background: var(--bg-tertiary);
 }
 
 .proc-name {
   font-weight: 500;
-  color: #333;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .status-badge {
@@ -138,27 +154,28 @@ tbody tr.running:hover {
 }
 
 .status-running {
-  background: #d4edda;
-  color: #155724;
+  background: rgba(46, 213, 115, 0.15);
+  color: var(--success-color);
 }
 
 .status-stopped {
-  background: #f8d7da;
-  color: #721c24;
+  background: rgba(255, 71, 87, 0.15);
+  color: var(--danger-color);
 }
 
 .cpu-bar {
   position: relative;
   width: 120px;
   height: 20px;
-  background: #e9ecef;
+  background: var(--bg-tertiary);
   border-radius: 10px;
   overflow: hidden;
+  transition: background 0.3s ease;
 }
 
 .cpu-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #667eea, #764ba2);
+  background: linear-gradient(90deg, var(--primary-color), var(--header-gradient-end));
   border-radius: 10px;
   transition: width 0.3s ease;
   min-width: 0;
@@ -171,7 +188,8 @@ tbody tr.running:hover {
   transform: translate(-50%, -50%);
   font-size: 11px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .guardian-badge {
@@ -183,28 +201,29 @@ tbody tr.running:hover {
 }
 
 .guardian-badge.active {
-  background: #d1ecf1;
+  background: rgba(12, 84, 96, 0.12);
   color: #0c5460;
 }
 
 .guardian-badge.idle {
-  background: #fff3cd;
-  color: #856404;
+  background: rgba(255, 165, 2, 0.15);
+  color: var(--warning-color);
 }
 
 .guardian-badge.killed {
-  background: #f5c6cb;
-  color: #721c24;
+  background: rgba(255, 71, 87, 0.15);
+  color: var(--danger-color);
 }
 
 .guardian-badge.disabled {
-  background: #e2e3e5;
-  color: #383d41;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
 }
 
 .empty-row {
   text-align: center;
-  color: #999;
+  color: var(--text-muted);
   padding: 30px;
+  transition: color 0.3s ease;
 }
 </style>

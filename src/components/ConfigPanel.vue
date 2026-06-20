@@ -75,22 +75,25 @@ function handleThresholdChange(name, value) {
 
 <style scoped>
 .config-panel {
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow);
+  transition: background 0.3s ease;
 }
 
 .config-panel h2 {
   font-size: 18px;
   margin-bottom: 16px;
-  color: #333;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .config-section h3 {
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 12px;
+  transition: color 0.3s ease;
 }
 
 .add-process {
@@ -102,19 +105,22 @@ function handleThresholdChange(name, value) {
 .add-process input {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 14px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
 }
 
 .add-process input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--primary-color);
 }
 
 .btn-add {
   padding: 8px 20px;
-  background: #667eea;
+  background: var(--primary-color);
   color: white;
   border: none;
   border-radius: 6px;
@@ -124,7 +130,7 @@ function handleThresholdChange(name, value) {
 }
 
 .btn-add:hover {
-  background: #5568d3;
+  background: var(--primary-hover);
 }
 
 .process-list {
@@ -138,13 +144,15 @@ function handleThresholdChange(name, value) {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: #f8f9fa;
+  background: var(--bg-tertiary);
   border-radius: 8px;
+  transition: background 0.3s ease;
 }
 
 .process-name {
   font-weight: 500;
-  color: #333;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .process-actions {
@@ -161,25 +169,29 @@ function handleThresholdChange(name, value) {
 
 .threshold-input label {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
 }
 
 .threshold-input input {
   width: 100px;
   padding: 6px 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 13px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
 }
 
 .threshold-input input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--primary-color);
 }
 
 .btn-remove {
   padding: 6px 14px;
-  background: #ff4757;
+  background: var(--danger-color);
   color: white;
   border: none;
   border-radius: 4px;
@@ -189,13 +201,14 @@ function handleThresholdChange(name, value) {
 }
 
 .btn-remove:hover {
-  background: #e84118;
+  background: var(--danger-hover);
 }
 
 .empty-tip {
   text-align: center;
-  color: #999;
+  color: var(--text-muted);
   padding: 20px;
   font-size: 14px;
+  transition: color 0.3s ease;
 }
 </style>

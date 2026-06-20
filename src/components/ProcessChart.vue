@@ -19,7 +19,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, shallowRef } from 'vue'
+import { ref, computed, watch, onMounted, shallowRef } from 'vue'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -70,6 +70,20 @@ watch(processNames, (names) => {
   }
 }, { immediate: true })
 
+const isDark = ref(false)
+
+function detectTheme() {
+  isDark.value = document.documentElement.classList.contains('dark')
+}
+
+onMounted(() => {
+  detectTheme()
+  const observer = new MutationObserver(() => {
+    detectTheme()
+  })
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+})
+
 const SAMPLE_STEP = 2
 
 const chartData = computed(() => {
@@ -117,63 +131,86 @@ const chartData = computed(() => {
   }
 })
 
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  animation: false,
-  interaction: {
-    mode: 'index',
-    intersect: false,
-  },
-  plugins: {
-    legend: {
-      position: 'top',
+const chartOptions = computed(() => {
+  const textColor = isDark.value ? '#cbd5e1' : '#333333'
+  const gridColor = isDark.value ? 'rgba(148, 163, 184, 0.15)' : 'rgba(0,0,0,0.08)'
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    interaction: {
+      mode: 'index',
+      intersect: false,
     },
-    tooltip: {
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      enabled: true
-    }
-  },
-  scales: {
-    y: {
-      type: 'linear',
-      display: true,
-      position: 'left',
-      title: {
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          color: textColor
+        }
+      },
+      tooltip: {
+        backgroundColor: isDark.value ? 'rgba(15, 23, 42, 0.95)' : 'rgba(0, 0, 0, 0.85)',
+        titleColor: textColor,
+        bodyColor: textColor,
+        borderColor: isDark.value ? '#475569' : 'rgba(255,255,255,0.1)',
+        borderWidth: 1,
+        enabled: true
+      }
+    },
+    scales: {
+      x: {
+        ticks: { color: textColor },
+        grid: { color: gridColor }
+      },
+      y: {
+        type: 'linear',
         display: true,
-        text: 'CPU (%)'
+        position: 'left',
+        title: {
+          display: true,
+          text: 'CPU (%)',
+          color: textColor
+        },
+        min: 0,
+        ticks: { color: textColor },
+        grid: { color: gridColor }
       },
-      min: 0,
-    },
-    y1: {
-      type: 'linear',
-      display: true,
-      position: 'right',
-      title: {
+      y1: {
+        type: 'linear',
         display: true,
-        text: '内存 (MB)'
-      },
-      min: 0,
-      grid: {
-        drawOnChartArea: false,
+        position: 'right',
+        title: {
+          display: true,
+          text: '内存 (MB)',
+          color: textColor
+        },
+        min: 0,
+        ticks: { color: textColor },
+        grid: {
+          drawOnChartArea: false,
+          color: gridColor
+        },
       },
     },
-  },
-}
+  }
+})
 </script>
 
 <style scoped>
 .process-chart {
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow);
+  transition: background 0.3s ease;
 }
 
 .process-chart h2 {
   font-size: 18px;
   margin-bottom: 16px;
-  color: #333;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .chart-tabs {
@@ -185,22 +222,23 @@ const chartOptions = {
 
 .tab-btn {
   padding: 6px 16px;
-  background: #f0f0f0;
-  border: none;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
   border-radius: 20px;
   cursor: pointer;
   font-size: 13px;
-  color: #666;
+  color: var(--text-secondary);
   transition: all 0.2s;
 }
 
 .tab-btn:hover {
-  background: #e0e0e0;
+  background: var(--bg-primary);
 }
 
 .tab-btn.active {
-  background: #667eea;
+  background: var(--primary-color);
   color: white;
+  border-color: var(--primary-color);
 }
 
 .chart-container {
@@ -213,7 +251,8 @@ const chartOptions = {
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #999;
+  color: var(--text-muted);
   font-size: 14px;
+  transition: color 0.3s ease;
 }
 </style>
